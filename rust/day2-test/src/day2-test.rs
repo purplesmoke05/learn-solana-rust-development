@@ -7,6 +7,12 @@ struct Point {
     y: i32
 }
 
+impl From<i32> for Point {
+    fn from(xx: i32) -> Self {
+        Point{x:xx,y:xx}
+    }
+}
+
 fn main() {
     // before 7
     // after 50
@@ -14,7 +20,7 @@ fn main() {
     let _mutable_integer = 7i32;
     {
         println!("before {}", _mutable_integer);
-        let _mutable_integer = _mutable_integer;
+        let mut _mutable_integer = _mutable_integer;
         _mutable_integer = 50;
         println!("after {}", _mutable_integer);
     }
@@ -24,6 +30,7 @@ fn main() {
     let point = Point::from(30);
     println!("The Point is {:?}", point);
 
+    let x=132;
     // x as a u8 is : 132
-    println!("x as a u8 is : {}", /* x */ as u8);
+    println!("x as a u8 is : {}", x as u8);
 }

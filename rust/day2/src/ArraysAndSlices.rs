@@ -39,5 +39,5 @@ fn main() {
     analyze_slice(&ys[1 .. 4]);
 
     // Out of bound indexing causes compile error
-    println!("{}", xs[5]);
+    // println!("{}", xs[5]);
 }

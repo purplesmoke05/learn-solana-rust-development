@@ -2237,11 +2237,13 @@ dependencies = [
 name = "solana-basic"
 version = "1.0.0"
 dependencies = [
+ "arrayref",
  "borsh",
  "borsh-derive",
  "solana-program",
  "solana-program-test",
  "solana-sdk",
+ "thiserror",
 ]
 
 [[package]]

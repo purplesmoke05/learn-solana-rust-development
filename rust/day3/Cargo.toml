@@ -1,0 +1,36 @@
+[package]
+name = "day3"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[[bin]]
+name="main1"
+path="src/Aliasing.rs"
+[[bin]]
+name="main2"
+path="src/Basic.rs"
+[[bin]]
+name="main3"
+path="src/Casting.rs"
+[[bin]]
+name="main4"
+path="src/Declare.rs"
+[[bin]]
+name="main5"
+path="src/Freezing.rs"
+[[bin]]
+name="main6"
+path="src/Interference.rs"
+[[bin]]
+name="main7"
+path="src/Literals.rs"
+[[bin]]
+name="main8"
+path="src/Mutability.rs"
+[[bin]]
+name="main9"
+path="src/ScopeAndShadowing.rs"

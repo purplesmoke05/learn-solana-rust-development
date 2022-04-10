@@ -9,14 +9,18 @@ import {
   SystemProgram,
   TransactionInstruction,
   Transaction,
-  sendAndConfirmTransaction,
+  sendAndConfirmTransaction, AccountInfo,
 } from '@solana/web3.js';
 import fs from 'mz/fs';
 import path from 'path';
 import * as borsh from 'borsh';
+import { BN }from "bn.js"
 
 import {getPayer, getRpcUrl, createKeypairFromFile} from './utils';
-
+// @ts-ignore
+import * as BufferLayout from "buffer-layout";
+import {struct, u32} from "@solana/buffer-layout";
+import {u64} from "@solana/buffer-layout-utils";
 /**
  * Connection to the network
  */
@@ -61,22 +65,38 @@ const PROGRAM_KEYPAIR_PATH = path.join(PROGRAM_PATH, 'helloworld-keypair.json');
  */
 class GreetingAccount {
   counter = 0;
-  constructor(fields: {counter: number} | undefined = undefined) {
+  free_counter: bigint = BigInt(0);
+  constructor(fields: {counter: number, free_counter: bigint} | undefined = undefined) {
     if (fields) {
       this.counter = fields.counter;
+      this.free_counter = fields.free_counter;
     }
   }
 }
+export interface GreetingAccountInterface {
+  counter: number
+  free_counter: bigint
+}
+export const GreetingAccountLayout = struct<GreetingAccountInterface>([
+    u32('counter'),
+    u64('free_counter')
+])
 
 /**
  * Borsh schema definition for greeting accounts
  */
 const GreetingSchema = new Map([
-  [GreetingAccount, {kind: 'struct', fields: [['counter', 'u32']]}],
+  [GreetingAccount, {
+    kind: 'struct',
+    fields:
+        [['counter', 'u32'], ['free_counter', 'u64']]
+  }
+  ],
 ]);
 
 /**
  * The expected size of each greeting account.
+ const GREETING_SIZE = GreetingAccountLayout.span
  */
 const GREETING_SIZE = borsh.serialize(
   GreetingSchema,
@@ -198,12 +218,15 @@ export async function checkProgram(): Promise<void> {
 /**
  * Say hello
  */
-export async function sayHello(): Promise<void> {
+export async function sayHello(expectedAmount: number): Promise<void> {
   console.log('Saying hello to', greetedPubkey.toBase58());
-  const instruction = new TransactionInstruction({
-    keys: [{pubkey: greetedPubkey, isSigner: false, isWritable: true}],
+    const instruction = new TransactionInstruction({
+    keys: [
+      {pubkey: greetedPubkey, isSigner:false, isWritable:true },
+      {pubkey:payer.publicKey, isSigner:false, isWritable:true }
+    ],
     programId,
-    data: Buffer.alloc(0), // All instructions are hellos
+    data: Buffer.from(Uint8Array.of(0, ...new BN(expectedAmount).toArray("le", 8)))
   });
   await sendAndConfirmTransaction(
     connection,
@@ -211,7 +234,15 @@ export async function sayHello(): Promise<void> {
     [payer],
   );
 }
-
+export function parseGreetingAccount(ai: AccountInfo<Buffer>): AccountInfo<GreetingAccountInterface> {
+  const accountInfo = GreetingAccountLayout.decode(ai.data);
+  return  {
+    data: accountInfo,
+    executable:ai.executable,
+    owner: ai.owner,
+    lamports: ai.lamports
+  }
+}
 /**
  * Report the number of times the greeted account has been said hello to
  */
@@ -226,9 +257,13 @@ export async function reportGreetings(): Promise<void> {
     accountInfo.data,
   );
   console.log(
-    greetedPubkey.toBase58(),
-    'has been greeted',
-    greeting.counter,
-    'time(s)',
+      greetedPubkey.toBase58(),
+      'has been greeted',
+      greeting.counter,
+      'time(s)',
+  );
+  console.log(
+      'Free counter: ',
+      greeting.free_counter.toString(),
   );
 }

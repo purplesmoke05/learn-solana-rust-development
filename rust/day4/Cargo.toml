@@ -1,0 +1,23 @@
+[package]
+name = "day4"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+[[bin]]
+name="main1"
+path= "src/From.rs"
+[[bin]]
+name="main2"
+path="src/FromStrings.rs"
+[[bin]]
+name="main3"
+path="src/Intro.rs"
+[[bin]]
+name="main4"
+path="src/ToStrings.rs"
+[[bin]]
+name="main5"
+path="src/TryFormAndTryIntro.rs"

@@ -1,3 +1,8 @@
 .DS_Store
 
 */.DS_Store
+*dist
+.node-version
+yarn.lock
+*node_modules
+*target
