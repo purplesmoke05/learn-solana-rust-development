@@ -64,7 +64,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive } from "vue";
+import { defineComponent } from "vue";
+import { reactive } from "@vue/reactivity"
 import { initEscrow } from "./util/initEscrow";
 
 interface EscrowState {
@@ -108,7 +109,7 @@ export default defineComponent({
 
     const onInitEscrow = async () => {
       try {
-        const { 
+        const {
           escrowAccountPubkey,
           isInitialized,
           initializerAccountPubkey,

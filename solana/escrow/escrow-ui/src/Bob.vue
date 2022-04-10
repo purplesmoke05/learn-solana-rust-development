@@ -35,7 +35,8 @@
 </template>
 
 <script lang="ts"> 
-import { defineComponent, reactive } from 'vue';
+import { defineComponent } from 'vue';
+import { reactive } from "@vue/reactivity"
 import { takeTrade } from "./util/takeTrade";
 
 export default defineComponent({
