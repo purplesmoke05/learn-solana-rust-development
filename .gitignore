@@ -1,8 +1,9 @@
 .DS_Store
 
 */.DS_Store
-*dist
+*dist/
 .node-version
 yarn.lock
-*node_modules
-*target
+*node_modules/
+node_modules
+*target/
