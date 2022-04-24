@@ -3,4 +3,4 @@ cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "mocha --require ts-node/register tests/*.ts -t 1000000"
+test = "yarn ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

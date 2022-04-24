@@ -15,11 +15,12 @@
 //! 2. If no one has exchanged, the initializer can close the escrow account
 //! - Initializer will get back ownership of their token X account
 
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, accounts::account::Account};
 use anchor_spl::token::{self, CloseAccount, Mint, SetAuthority, TokenAccount, Transfer};
 use spl_token::instruction::AuthorityType;
+use anchor_lang::solana_program::entrypoint::ProgramResult;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("A7o1hZHupSAdteB7QvC4YPVRkb1ti1iup5F2VA4xrYdk");
 
 #[program]
 pub mod escrow {
@@ -32,7 +33,7 @@ pub mod escrow {
         _vault_account_bump: u8,
         initializer_amount: u64,
         taker_amount: u64,
-    ) -> ProgramResult {
+    ) -> Result<()> {
         // input accounts are assigned to EscrowAccount fileds one by one
         ctx.accounts.escrow_account.initializer_key = *ctx.accounts.initializer.key;
         ctx.accounts.escrow_account.initializer_deposit_token_account = 
@@ -68,7 +69,7 @@ pub mod escrow {
         Ok(())
     }
 
-    pub fn cancel_escrow(ctx: Context<CancelEscrow>) -> ProgramResult {
+    pub fn cancel_escrow(ctx: Context<CancelEscrow>) -> Result<()> {
         // PDA for vault_authority
         let (_vault_authority, vault_authority_bump) =
             Pubkey::find_program_address(&[ESCROW_PDA_SEED], ctx.program_id);
@@ -92,7 +93,7 @@ pub mod escrow {
         Ok(())
     }
 
-    pub fn exchange(ctx: Context<Exchange>) -> ProgramResult {
+    pub fn exchange(ctx: Context<Exchange>) -> Result<()> {
         let (_vault_authority, vault_authority_bump) =
             Pubkey::find_program_address(&[ESCROW_PDA_SEED], ctx.program_id);
         let authority_seeds = &[&ESCROW_PDA_SEED[..], &[vault_authority_bump]];
@@ -132,12 +133,13 @@ pub mod escrow {
 #[instruction(vault_account_bump: u8, initializer_amount: u64)]
 pub struct InitializeEscrow<'info> {
     #[account(mut, signer)]
+    /// CHECK: This is not dangerous because we don't read or write from this account
     pub initializer: AccountInfo<'info>,
     pub mint: Account<'info, Mint>,
     #[account(
         init,
         seeds = [b"token-seed".as_ref()],
-        bump = vault_account_bump,
+        bump,
         payer = initializer,
         token::mint = mint,
         token::authority = initializer,
@@ -150,18 +152,22 @@ pub struct InitializeEscrow<'info> {
     pub initializer_deposit_token_account: Account<'info, TokenAccount>,
     pub initializer_receive_token_account: Account<'info, TokenAccount>,
     #[account(zero)]
-    pub escrow_account: ProgramAccount<'info, EscrowAccount>,
+    pub escrow_account: Account<'info, EscrowAccount>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
     pub system_program: AccountInfo<'info>,
     pub rent: Sysvar<'info, Rent>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
     pub token_program: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
 pub struct CancelEscrow<'info> {
     #[account(mut, signer)]
+    /// CHECK: This is not dangerous because we don't read or write from this account
     pub initializer: AccountInfo<'info>,
     #[account(mut)]
     pub vault_account: Account<'info, TokenAccount>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
     pub vault_authority: AccountInfo<'info>,
     #[account(mut)]
     pub initializer_deposit_token_account: Account<'info, TokenAccount>,
@@ -171,7 +177,8 @@ pub struct CancelEscrow<'info> {
         constraint = escrow_account.initializer_deposit_token_account == *initializer_deposit_token_account.to_account_info().key,
         close = initializer
     )]
-    pub escrow_account: ProgramAccount<'info, EscrowAccount>,
+    pub escrow_account: Box<Account<'info, EscrowAccount>>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
     pub token_program: AccountInfo<'info>,
 }
 
@@ -179,16 +186,18 @@ pub struct CancelEscrow<'info> {
 #[derive(Accounts)]
 pub struct Exchange<'info> {
     #[account(signer)]  // check if given account signed the Tx
+    /// CHECK: This is not dangerous because we don't read or write from this account
     pub taker: AccountInfo<'info>,
     #[account(mut)]     // mark the account as mutable and persists the state transition
-    pub taker_deposit_token_account: Account<'info, TokenAccount>,
+    pub taker_deposit_token_account: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
-    pub taker_receive_token_account: Account<'info, TokenAccount>,
+    pub taker_receive_token_account: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
-    pub initializer_deposit_token_account: Account<'info, TokenAccount>,
+    pub initializer_deposit_token_account: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
-    pub initializer_receive_token_account: Account<'info, TokenAccount>,
+    pub initializer_receive_token_account: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
+    /// CHECK: This is not dangerous because we don't read or write from this account
     pub initializer: AccountInfo<'info>,
     #[account(
         mut,
@@ -198,10 +207,12 @@ pub struct Exchange<'info> {
         constraint = escrow_account.initializer_key == *initializer.key,
         close = initializer // mark the account as beingn closed at the end of Ix's execution, sending rent exemption lamports to the initializer
     )]
-    pub escrow_account: ProgramAccount<'info, EscrowAccount>,
+    pub escrow_account: Box<Account<'info, EscrowAccount>>,
     #[account(mut)]
-    pub vault_account: Account<'info, TokenAccount>,
+    pub vault_account: Box<Account<'info, TokenAccount>>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
     pub vault_authority: AccountInfo<'info>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
     pub token_program: AccountInfo<'info>,
 }
 
