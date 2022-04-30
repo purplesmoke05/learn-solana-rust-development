@@ -18,9 +18,8 @@
 use anchor_lang::{prelude::*, accounts::account::Account};
 use anchor_spl::token::{self, CloseAccount, Mint, SetAuthority, TokenAccount, Transfer};
 use spl_token::instruction::AuthorityType;
-use anchor_lang::solana_program::entrypoint::ProgramResult;
 
-declare_id!("A7o1hZHupSAdteB7QvC4YPVRkb1ti1iup5F2VA4xrYdk");
+declare_id!("3eV8xVfEqj53dBQLj4Gm7gVnyRY2iLd7pGhhHMejGnDj");
 
 #[program]
 pub mod escrow {

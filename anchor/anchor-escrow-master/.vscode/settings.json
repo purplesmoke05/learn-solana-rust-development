@@ -1,3 +1,12 @@
 {
-    "rust-client.engine": "rust-analyzer"
+    "rust-client.engine": "rust-analyzer",
+    "cSpell.words": [
+        "Keypair",
+        "pubkey"
+    ],
+    "rust-analyzer.workspace.symbol.search.kind": "all_symbols",
+    "rust-analyzer.trace.extension": true,
+    "rust-analyzer.linkedProjects": [
+        "programs/escrow/Cargo.toml"
+    ],
 }

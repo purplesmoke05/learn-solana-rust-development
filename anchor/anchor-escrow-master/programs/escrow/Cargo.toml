@@ -14,7 +14,14 @@ default = []
 no-entrypoint = []
 no-idl = []
 
+[dev-dependencies]
+solana-logger = "1.9.13"
+solana-sdk = "1.9.13"
+solana-program-test = "1.9.13"
+anchor-client = {version = "0.24.2"}
+
 [dependencies]
 anchor-lang = {version = "0.24.2"}
 anchor-spl = {version = "0.24.2"}
-spl-token = {version = "3.3.0", features = ["no-entrypoint"]}
+solana-program = "1.9.13"
+spl-token = {version = "3.2.0", features = ["no-entrypoint"]}
