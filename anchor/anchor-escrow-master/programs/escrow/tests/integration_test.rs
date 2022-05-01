@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use escrow::{self, entry};
+    use escrow;
     use std::{vec};
     use anchor_lang::prelude::*;
     use solana_sdk::{instruction::Instruction, commitment_config::CommitmentLevel, transport::Result as SolanaResult, program_option::COption};
@@ -368,20 +368,20 @@ mod test {
 
 
 
-    pub fn initialize_escrow_scenario(
+    pub async fn initialize_escrow_scenario(
         test: &mut EscrowProgramTest,
         deposit_token_index: usize,
         deposit_amount: usize,
         deposit_user_index: usize,
         receive_token_index: usize,
-        receive_amount: usize,
-        receive_user_index: usize
-    ) {
+        receive_amount: usize
+        // receive_user_index: usize
+    ) -> SolanaResult<()> {
         let deposit_token_mint = test.with_mint(deposit_token_index);
         let initializer_deposit_token_account = test.with_user_token_account(deposit_user_index, deposit_token_index);
         let initializer_receive_token_account = test.with_user_token_account(deposit_user_index, receive_token_index);
+        let deposit_user = Keypair::from_base58_string(&test.users[deposit_user_index].to_base58_string());
         
-        let deposit_user = test.users[deposit_user_index].pubkey();
         let escrow_account = Keypair::new();
         let (vault_account_pda, _bump_seed) = Pubkey::find_program_address(&[b"escrow"], &Pubkey::new_unique());
         
@@ -389,7 +389,7 @@ mod test {
         let ix = program
         .request()
         .accounts(escrow::accounts::InitializeEscrow {
-            initializer: deposit_user,
+            initializer: deposit_user.pubkey(),
             mint: deposit_token_mint.pubkey.unwrap(),
             vault_account: vault_account_pda,
             initializer_deposit_token_account: initializer_deposit_token_account.key(),
@@ -407,7 +407,8 @@ mod test {
         .instructions().unwrap().pop().unwrap();
 
         let ixs =  &[ix];
-        test.process_transaction(ixs, None);
+        let signers = vec![&escrow_account, &deposit_user];
+        test.process_transaction(ixs, Some(&signers)).await
     }
     
     #[tokio::test]
@@ -415,7 +416,9 @@ mod test {
     async fn test_escrow_initialize() {
         let config = EscrowProgramTestConfig{num_users: 2,..EscrowProgramTestConfig::default()};
         let mut test = EscrowProgramTest::start_new(&config).await;
-        initialize_escrow_scenario(&mut test,0, 10, 0, 1, 100, 1)
+        let result = initialize_escrow_scenario(&mut test,0, 10, 0, 1, 100).await;
+        
+        assert_eq!(result.is_err(), false);
         
     }
 }
