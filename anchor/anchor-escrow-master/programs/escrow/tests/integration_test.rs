@@ -3,7 +3,7 @@ mod test {
     use escrow;
     use std::{vec};
     use anchor_lang::prelude::*;
-    use solana_sdk::{instruction::Instruction, commitment_config::CommitmentLevel, transport::Result as SolanaResult, program_option::COption};
+    use solana_sdk::{instruction::Instruction, commitment_config::CommitmentLevel, transport::Result as SolanaResult, program_option::COption, sysvar::instructions};
     use solana_program::{system_program, program_pack::Pack};
     use solana_program_test::*;
     use {
@@ -244,7 +244,7 @@ mod test {
             mints[quote_index] = quote_mint;
 
             let initializer = Keypair::new();
-            let mut test = ProgramTest::new("escrow",escrow::id(), None);
+            let mut test = ProgramTest::new("escrow",escrow::id(), processor!(escrow::entry));
             test.add_account(initializer.pubkey(), Account::default());
             let client = Client::new_with_options(
                 Cluster::Debug,
@@ -338,14 +338,22 @@ mod test {
             &mut self,
             instructions: &[Instruction],
             signers: Option<&[&Keypair]>,
+            signers_override: bool,
+            payer: Option<&Keypair>
         ) -> SolanaResult<()> {
             let mut transaction =
-                Transaction::new_with_payer(&instructions, Some(&self.context.payer.pubkey()));
+            Transaction::new_with_payer(&instructions, Some(&self.context.payer.pubkey()));
+            if let Some(payer) = payer {
+                transaction =Transaction::new_with_payer(&instructions, Some(&payer.pubkey()));
+            }
 
             let mut all_signers = vec![&self.context.payer];
-
             if let Some(signers) = signers {
-                all_signers.extend_from_slice(signers);
+                if signers_override {
+                    all_signers = signers.to_vec();
+                } else {
+                    all_signers.extend_from_slice(signers);
+                }
             }
 
             transaction.sign(&all_signers, self.context.last_blockhash);
@@ -398,7 +406,7 @@ mod test {
             rent: sysvar::rent::id(),
             token_program: anchor_spl::token::ID,
             system_program: system_program::ID,
-        }.to_account_metas(None))
+        }.to_account_metas(Some(true)))
         .args(escrow::instruction::InitializeEscrow{
             _vault_account_bump: _bump_seed,
             initializer_amount: deposit_amount as u64,
@@ -407,8 +415,8 @@ mod test {
         .instructions().unwrap().pop().unwrap();
 
         let ixs =  &[ix];
-        let signers = vec![&escrow_account, &deposit_user];
-        test.process_transaction(ixs, Some(&signers)).await
+        let signers = vec![&deposit_user];
+        test.process_transaction(ixs, Some(&signers), true, Some(&deposit_user)).await
     }
     
     #[tokio::test]
@@ -416,6 +424,7 @@ mod test {
     async fn test_escrow_initialize() {
         let config = EscrowProgramTestConfig{num_users: 2,..EscrowProgramTestConfig::default()};
         let mut test = EscrowProgramTest::start_new(&config).await;
+        // TODO: resolve MissingAccountError
         let result = initialize_escrow_scenario(&mut test,0, 10, 0, 1, 100).await;
         
         assert_eq!(result.is_err(), false);

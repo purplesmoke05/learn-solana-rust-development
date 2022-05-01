@@ -42,8 +42,8 @@
             "args": [],
             "cwd": "${workspaceFolder}",
             "env": {
-                "BPF_OUT_DIR": "${workspaceFolder}/target/deploy/",
-                "RUST_LOG": "solana_rbpf=trace"
+                "RUST_LOG": "solana=error",
+                // "RUST_BACKTRACE": "1"
             }
         }
     ]
