@@ -1,11 +1,15 @@
+
+mod utils;
+use utils::airdrop;
 #[cfg(test)]
 mod test {
+    use super::*;
     use escrow;
     use std::{vec};
     use anchor_lang::prelude::*;
     use solana_sdk::{instruction::Instruction, commitment_config::CommitmentLevel, transport::Result as SolanaResult, program_option::COption, sysvar::instructions};
     use solana_program::{system_program, program_pack::Pack};
-    use solana_program_test::*;
+    use solana_program_test::{processor, ProgramTest, ProgramTestContext, tokio};
     use {
         anchor_client::{
             solana_sdk::{
@@ -392,7 +396,14 @@ mod test {
         
         let escrow_account = Keypair::new();
         let (vault_account_pda, _bump_seed) = Pubkey::find_program_address(&[b"escrow"], &Pubkey::new_unique());
+
+        let lamports = 10_000_000;
+        airdrop(&mut test.context, &vault_account_pda, lamports).await;
+        airdrop(&mut test.context, &escrow_account.pubkey(), lamports).await;
+        let vault_account_pda_info = test.context.banks_client.get_account(vault_account_pda).await.unwrap().unwrap();
+        assert_eq!(vault_account_pda_info.lamports, lamports);
         
+
         let program = test.client.program(escrow::id());
         let ix = program
         .request()
@@ -406,7 +417,7 @@ mod test {
             rent: sysvar::rent::id(),
             token_program: anchor_spl::token::ID,
             system_program: system_program::ID,
-        }.to_account_metas(Some(true)))
+        }.to_account_metas(None))
         .args(escrow::instruction::InitializeEscrow{
             _vault_account_bump: _bump_seed,
             initializer_amount: deposit_amount as u64,
@@ -421,12 +432,47 @@ mod test {
     
     #[tokio::test]
     #[cfg(test)]
+    async fn test_airdrop() {
+        let config = EscrowProgramTestConfig{num_users: 2,..EscrowProgramTestConfig::default()};
+        let mut program_test = EscrowProgramTest::start_new(&config).await;
+
+        let pubkey_user_a = Pubkey::new_unique();
+        let pubkey_user_b = Pubkey::new_unique();
+        let (allocated_pubkey_x, _bump_seed_x) = Pubkey::find_program_address(&[b"escrow_x"], &Pubkey::new_unique());
+        let (allocated_pubkey_y, _bump_seed_y) = Pubkey::find_program_address(&[b"escrow_y"], &Pubkey::new_unique());
+
+        let lamp_user_a = 1_000_000;
+        let lamp_user_b = 2_000_000;
+        let lamp_x = 10_000_000;
+        let lamp_y = 20_000_000;
+        airdrop(&mut program_test.context, &pubkey_user_a, lamp_user_a).await;
+        airdrop(&mut program_test.context, &pubkey_user_b, lamp_user_b).await;
+        airdrop(&mut program_test.context, &allocated_pubkey_x, lamp_x).await;
+        airdrop(&mut program_test.context, &allocated_pubkey_y, lamp_y).await;
+        
+        let account_user_a = program_test.context.banks_client.get_account(pubkey_user_a).await.unwrap().unwrap();
+        let account_user_b = program_test.context.banks_client.get_account(pubkey_user_b).await.unwrap().unwrap();
+        let account_allocated_x = program_test.context.banks_client.get_account(allocated_pubkey_x).await.unwrap().unwrap();
+        let account_allocated_y = program_test.context.banks_client.get_account(allocated_pubkey_y).await.unwrap().unwrap();
+
+        assert_eq!(account_user_a.lamports, lamp_user_a);
+        assert_eq!(account_user_b.lamports, lamp_user_b);
+        assert_eq!(account_allocated_x.lamports, lamp_x);
+        assert_eq!(account_allocated_y.lamports, lamp_y);
+        println!("lamp user a: {}", account_user_a.lamports);
+        println!("lamp user b: {}", account_user_b.lamports);
+        println!("lamp user b: {}", account_allocated_x.lamports);
+        println!("lamp user b: {}", account_allocated_y.lamports);
+        
+    }
+
+    #[tokio::test]
+    #[cfg(test)]
     async fn test_escrow_initialize() {
         let config = EscrowProgramTestConfig{num_users: 2,..EscrowProgramTestConfig::default()};
         let mut test = EscrowProgramTest::start_new(&config).await;
         // TODO: resolve MissingAccountError
         let result = initialize_escrow_scenario(&mut test,0, 10, 0, 1, 100).await;
-        
         assert_eq!(result.is_err(), false);
         
     }
