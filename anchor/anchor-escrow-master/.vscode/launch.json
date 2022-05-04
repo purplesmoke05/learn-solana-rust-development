@@ -42,7 +42,7 @@
             "args": [],
             "cwd": "${workspaceFolder}",
             "env": {
-                "RUST_LOG": "solana=error",
+                "RUST_LOG": "solana_bpf_loader=info",
                 // "BPF_OUT_DIR": "${workspaceFolder}/target/deploy/"
                 // "RUST_BACKTRACE": "1"
             }

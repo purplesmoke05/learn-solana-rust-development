@@ -19,7 +19,7 @@ use anchor_lang::{prelude::*, accounts::account::Account};
 use anchor_spl::token::{self, CloseAccount, Mint, SetAuthority, TokenAccount, Transfer};
 use spl_token::instruction::AuthorityType;
 
-declare_id!("3eV8xVfEqj53dBQLj4Gm7gVnyRY2iLd7pGhhHMejGnDj");
+declare_id!("HavZRZtrzKHAs3RTxdm77hvzSL1aaZujVmn9k2mA4yqE");
 
 #[program]
 pub mod escrow {

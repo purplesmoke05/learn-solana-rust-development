@@ -1,8 +1,10 @@
 {
     "rust-client.engine": "rust-analyzer",
     "cSpell.words": [
+        "blockhash",
         "Keypair",
-        "pubkey"
+        "pubkey",
+        "solana"
     ],
     "rust-analyzer.workspace.symbol.search.kind": "all_symbols",
     "rust-analyzer.trace.extension": true,
