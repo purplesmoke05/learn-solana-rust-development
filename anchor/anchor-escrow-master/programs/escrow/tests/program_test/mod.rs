@@ -241,6 +241,17 @@ pub async fn get_lamport_balance(address: Pubkey, escrow_program_test: &mut Escr
     escrow_program_test.context.banks_client.get_account(address).await.unwrap().unwrap().lamports()
 }
 
+pub async fn get_rent_minimum_balance(len: usize, escrow_program_test: &mut EscrowProgramTest) -> u64 {
+    let rent_exempt_threshold = escrow_program_test
+        .context
+        .banks_client
+        .get_rent()
+        .await
+        .unwrap()
+        .minimum_balance(len);
+    return rent_exempt_threshold
+}
+
 pub async fn airdrop(receiver: &Pubkey, amount: u64, escrow_program_test: &mut EscrowProgramTest) {
     let rent_exempt_threshold = escrow_program_test
         .context
